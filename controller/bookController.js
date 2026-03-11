@@ -1,0 +1,98 @@
+import Book from "../models/book.model.js";
+
+const bookController = {
+  // Add a new book
+  addBook: async (req, res) => {
+    const { url, title, author } = req.body;
+
+    if (!url || !title || !author) {
+      return res.status(400).send({ msg: "All fields are required" });
+    }
+
+    try {
+      // Check if book already exists for this user
+      const checkIsAval = await Book.findOne({ title, user: req.user.id });
+      if (checkIsAval) {
+        return res.status(200).send({ msg: "Book already exists for this user" });
+      }
+
+      const newBook = new Book({
+        url,
+        title,
+        author,
+        user: req.user.id, // tie book to logged-in user
+      });
+
+      await newBook.save();
+      res.status(201).send({ msg: "Book added successfully" });
+    } catch (error) {
+      res.status(500).send({ err: error.message });
+    }
+  },
+  getBookById: async (req, res) => {
+    const { bookId } = req.params;
+    const { id } = req.user;
+    try {
+      const singleBook = await Book.find({ _id: bookId, user: id });
+      if (!singleBook) {
+        return res.status(404).send({ msg: "Please enter a valid Id" });
+      }
+      res.status(200).json(singleBook);
+    } catch (error) {
+      res.status(400).send({ err: error.message });
+    }
+  },
+  getAllBooks: async (req, res) => {
+    const { id } = req.user;
+    try {
+      const allBooks = await Book.find({ user: id });
+      if (!allBooks) {
+        return res.status(200).send({ msg: "Empty" });
+      }
+      return res.status(200).json(allBooks);
+    } catch (error) {
+      res.status(400).send({ err: error.message });
+    }
+  },
+  updateBook: async (req, res) => {
+  try {
+    const bookId = req.params.bookId;
+
+    const book = await Book.findOne({
+      _id: bookId,
+      user: req.user.id
+    });
+
+    if (!book) {
+      return res.status(404).send({ msg: "Book not found" });
+    }
+
+    await Book.findByIdAndUpdate(bookId, {
+      $set: req.body
+    });
+
+    res.send("Data updated successfully");
+
+  } catch (error) {
+    res.status(400).send({ Error: error.message });
+  }
+},
+
+  deleteBook: async (req, res) => {
+    const { id } = req.user;
+    try {
+      let { bookId } = req.params;
+      let book = await Book.findById({ _id: bookId, user: id });
+      if (!book) {
+        return res.status(404).send({ msg: "Book not found" });
+      }
+
+      await Book.findByIdAndDelete({ _id: bookId });
+      res.status(200).send({ msg: "Book deleted successfully" });
+    } catch (error) {
+      res.send({ err: error.message });
+    }
+  },
+};
+
+export default bookController;
