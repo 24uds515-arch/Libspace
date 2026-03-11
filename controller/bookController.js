@@ -1,7 +1,6 @@
 import Book from "../models/book.model.js";
 
 const bookController = {
-  // Add a new book
   addBook: async (req, res) => {
     const { url, title, author } = req.body;
 
@@ -10,7 +9,6 @@ const bookController = {
     }
 
     try {
-      // Check if book already exists for this user
       const checkIsAval = await Book.findOne({ title, user: req.user.id });
       if (checkIsAval) {
         return res.status(200).send({ msg: "Book already exists for this user" });
@@ -20,7 +18,7 @@ const bookController = {
         url,
         title,
         author,
-        user: req.user.id, // tie book to logged-in user
+        user: req.user.id, 
       });
 
       await newBook.save();
